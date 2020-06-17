@@ -30,7 +30,7 @@ class BS:
         else:
             raise NameError("Option undefined")
 
-    def LSM(self, N=10000, paths=10000, order=2,S_defined = False):
+    def LSM(self, N=10000, paths=10000, order=2, S_defined = 'bs'):
         """
         Longstaff-Schwartz Method for pricing American options
 
@@ -51,18 +51,22 @@ class BS:
         dt = self.T / (N - 1)  # time interval
         df = np.exp(-self.r * dt)  # discount factor per time time interval
 
-        if -S_defined:
+        if S_defined == 'noS':
             X0 = np.zeros((paths, 1))
             increments = stats.norm.rvs(loc=(self.r - self.sigma ** 2 / 2) * dt, scale=np.sqrt(dt) * self.sigma,
                                  size=(paths, N - 1))
             X = np.concatenate((X0, increments), axis=1).cumsum(1)
             S = self.S * np.exp(X)
-        else:
+        if S_defined == 'bs':
             S = self.S
-        H = np.maximum(self.K - S, 0)  # intrinsic values for put option
-        V = np.zeros_like(H)  # value matrix
-        V[:, -1] = H[:, -1]
-
+            H = np.maximum(self.K - S, 0)  # intrinsic values for put option
+            V = np.zeros_like(H)  # value matrix
+            V[:, -1] = H[:, -1]
+        if S_defined == 'fractional':
+            H = self.S
+            S = self.S
+            V = np.zeros_like(H)  # value matrix
+            V[:, -1] = H[:, -1]
         # Valuation by LS Method
         for t in range(N - 2, 0, -1):
             good_paths = H[:, t] > 0
