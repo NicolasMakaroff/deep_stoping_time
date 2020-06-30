@@ -62,6 +62,7 @@ class BS:
             H = np.maximum(self.K - S, 0)  # intrinsic values for put option
             V = np.zeros_like(H)  # value matrix
             V[:, -1] = H[:, -1]
+            print(V)
         if S_defined == 'fractional':
             H = self.S
             S = self.S
@@ -82,4 +83,5 @@ class BS:
             V[discount_path, t] = V[discount_path, t + 1] * df
 
         V0 = np.mean(V[:, 1]) * df  #
-        return V0
+        bound = np.max(V[:, 1])
+        return V0, bound

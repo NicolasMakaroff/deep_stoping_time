@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats.distributions import norm
+from scipy.stats.distributions import norm, lognorm, rv_frozen
 from math import sqrt
 from scipy.sparse import spdiags
 
@@ -127,3 +127,24 @@ class FractionalBrownianMotion:
             scaled_fgn = fgn * scale
             return np.insert(scaled_fgn.cumsum(), [0], 0)
 
+class GeometricBrownianMotion:
+    '''Geometric Brownian Motion.(with optional drift).'''
+    def __init__(self, mu: float=0.0, sigma: float=1.0):
+        self.mu = mu
+        self.sigma = sigma
+
+    def simulate(self, t: np.array, n: int, rnd: np.random.RandomState) \
+            -> np.array:
+        assert t.ndim == 1, 'One dimensional time vector required'
+        assert t.size > 0, 'At least one time point is required'
+        dt = np.concatenate((t[0:1], np.diff(t)))
+        assert (dt >= 0).all(), 'Increasing time vector required'
+        # transposed simulation for automatic broadcasting
+        dW = (rnd.normal(size=(t.size, n)).T * np.sqrt(dt)).T
+        W = np.cumsum(dW, axis=0)
+        return np.exp(self.sigma * W.T + (self.mu - self.sigma**2 / 2) * t).T
+
+    def distribution(self, t: float) -> rv_frozen:
+        mu_t = (self.mu - self.sigma**2/2) * t
+        sigma_t = self.sigma * np.sqrt(t)
+        return lognorm(scale=np.exp(mu_t), s=sigma_t)
